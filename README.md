@@ -4,12 +4,12 @@
 
 Serial solution
 ```
-~/Serial
+~/serial
 ```
 
 Parallel solution (using OpenMP)
 ```
-~/Parallel/concurrent-count.c
+~/parallel/concurrent-count.c
 ```
 
 ## Get Started
@@ -26,5 +26,5 @@ make
 
 To run
 ```
-./concurrent-count file-to-count.txt
+./concurrent-count file-to-process.txt
 ```
