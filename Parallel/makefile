@@ -1,5 +1,5 @@
 CC = gcc-8
-CFLAGS = -fopenmp -lcurl
+CFLAGS = -fopenmp
 
 TARGET = concurrent-count
 

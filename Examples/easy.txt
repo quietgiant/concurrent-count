@@ -1,0 +1,4 @@
+Hello world!
+This is a simple example demonstrating the Concurrent Count program.
+
+Very cool!

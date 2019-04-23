@@ -1,107 +1,88 @@
+#include <errno.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
-/* Global variables */
-
-const char Literals[] = "abcdefghijklmnopqrstuvwxyz";
-const unsigned int NLiterals = sizeof(Literals) - 1;
-const char TestString[] = "dave";
-char EndString[16];
-
-int CheckStatus = 0; // <-- This is the variable to check the search state
-
-/* Functions */
-
-static void BruteForcer(const int *, const int *, int, unsigned *);
-
-int main()
+int main(int argc, char **argv)
 {
-  unsigned Counter = 0; // <-- This is the variable I want to use for counting
-
-#pragma omp parallel default(none) shared(CheckStatus) reduction(+ \
-                                                                 : Counter)
+  // errno_t err;
+  int chr = 0;
+  FILE *pInputFile;
+  int const charLimit = 200000;
+  unsigned long numberOfElementsInArray = 0;
+  char a[charLimit];
+  unsigned long i = 0;
+  unsigned long numberOfSpaces = 0;
+  unsigned long numberOfPeriods = 0;
+  unsigned long numberOfChars = 0;
+  unsigned long numberOfParagraphs = 0;
+  unsigned long numberOfWords = 0;
+  //if ((err = fopen_s(&pInputFile, "C:/Users/palibanwait/Documents/CURRENT CLASSES/fileToRead.txt", "r")) == 0)
+  if (argc == 2)
   {
-    for (int WordLength = 0; WordLength < 5; ++WordLength)
+    printf("\nFile To read: %s\n", argv[1]);
+    //if ((err = fopen_s(&pInputFile, "C:/Users/palibanwait/Documents/CURRENT CLASSES/fileToRead.txt", "r")) == 0) {
+    pInputFile = fopen(argv[1], "r");
+    if (pInputFile != NULL)
     {
-      int FirstEntry[WordLength], LastEntry[WordLength];
-      int MyCheckStatus;
+      // file exists: don't read a char before the loop or
+      // it will be lost
 
-      for (int j = 0; j < WordLength; ++j)
-        FirstEntry[j] = LastEntry[j] = 0;
-
-#pragma omp for schedule(dynamic)
-      for (int i = 0; i < NLiterals; ++i)
+      while ((chr = getc(pInputFile)) != EOF)
       {
-        FirstEntry[0] = i;
-        LastEntry[0] = i + 1;
-#pragma omp atomic read
-        MyCheckStatus = CheckStatus;
-        if (!MyCheckStatus)
-          BruteForcer(FirstEntry, LastEntry, WordLength, &Counter);
-        printf("%u %u %u\n", WordLength, i, Counter);
+        a[i] = chr;
+        numberOfElementsInArray++;
+        i++;
       }
+      char word[100];
+      int wordCharCounter = 0;
+      clock_t start, stop;
+      start = clock();
+
+      for (int j = 0; j < numberOfElementsInArray; j++)
+      {
+        if (a[j] != ' ' && a[j] != '\n' && a[j] != '\0')
+        {
+          word[wordCharCounter] = a[j];
+          wordCharCounter++;
+        }
+        if (a[j] == ' ' || a[j] == '\n' || a[j] == '\0' || j == numberOfElementsInArray - 1)
+        {
+
+          numberOfWords++;
+          memset(word, 0, sizeof word);
+          wordCharCounter = 0;
+        }
+
+        if (a[j] == ' ')
+        {
+          numberOfSpaces++;
+        }
+        else if (a[j] == '.' || a[j] == '?' || a[j] == '!')
+        {
+          numberOfPeriods++;
+        }
+        else if (a[j] == '\n')
+        {
+          numberOfParagraphs++;
+        }
+        numberOfChars++;
+      }
+      stop = clock();
+      double duration = (stop - start); // / CLOCKS_PER_SEC;
+      printf("\nNumber of Spaces in text: %d", numberOfSpaces);
+      printf("\nNumber of Words in text: %d", numberOfWords);
+      printf("\nNumber of Punctionation in text: %d", numberOfPeriods);
+      printf("\nNumber of Lines in text: %d", numberOfParagraphs + 1);
+      printf("\nNumber of Chars in text: %d", numberOfChars - 2);
+      printf("\nNumber of Chars in text without space: %d", numberOfChars - 2 - numberOfSpaces);
+      printf("\nElapsed processing time: %.3f microseconds\n", duration);
     }
-  }
-  if (CheckStatus)
-    fprintf(stdout, "\nWord found: '%s'! %u tries.\n", EndString, Counter);
-
-  else
-    fprintf(stdout, "\nNothing found: '%s'! %u tries.\n", "Empty", Counter);
-
-  exit(EXIT_SUCCESS);
-}
-
-static void BruteForcer(const int *FstEntry, const int *LstEntry, int WdLength, unsigned *CounterPtr)
-{
-  char Word[WdLength];
-  int Entry[WdLength + 1];
-  int i, j;
-
-  memset(Entry, '\0', WdLength);
-
-  /* copy FstEntry to Entry */
-  for (i = 0; i < WdLength; ++i)
-    Entry[i] = FstEntry[i];
-
-  i = 0;
-
-  while (i < WdLength)
-  {
-    /* generate word */
-    for (i = 0; i < WdLength; ++i)
-      Word[i] = Literals[Entry[i]];
-
-    /* null-byte at end of string */
-    Word[WdLength] = '\0';
-
-    /*
-             * This part is okay. If the parallel region completes normally,
-             * for example if the word was not found, at the end the number
-             * of counts is right!
-             */
-    *CounterPtr += 1;
-
-    /* string compare */
-    if (strncmp(TestString, Word, sizeof(TestString)) == 0)
+    else
     {
-      strncpy(EndString, Word, strlen(Word));
-#pragma omp atomic write
-      CheckStatus = 1;
+      fprintf(stderr, "Error: cannot open file\n");
     }
-
-    /* increment Entry */
-    for (i = 0; i < WdLength && ++Entry[WdLength - i - 1] == NLiterals; i++)
-      Entry[WdLength - i - 1] = 0;
-
-    /* when Entry != LstEntry then leave loop */
-    for (j = 0; j < WdLength; ++j)
-      if (Entry[j] != LstEntry[j])
-        break;
-
-    /* when Entry == LstEntry leave function */
-    if (j == WdLength)
-      return;
   }
+  printf("\n-----\ndone.\n\n");
+  return 0;
 }
